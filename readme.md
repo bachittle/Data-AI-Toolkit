@@ -1,55 +1,139 @@
 # Data AI Toolkit
 
-A collection of Python scripts designed to help prepare and organize files for AI interactions. Makes it easy to share multiple files and directory structures with AI systems like Claude.
+A collection of tools to seamlessly share your codebase with Claude. Perfect for reviewing large projects, getting code assistance across multiple files, or analyzing entire codebases with AI.
 
-For detailed information about the motivation and design behind this toolkit, see [docs/index.md](docs/index.md).
+## Let's Use It On Itself!
 
-## Scripts
+We'll demonstrate how to use this toolkit by analyzing its own codebase. Follow along to see how it works.
 
-### dir_scanner.py
-Scans a directory and creates a JSON file mapping its structure.
+### 1. Directory Scanning
+
+First, let's scan the toolkit's directory structure:
+
 ```bash
-python dir_scanner.py <directory_path> [output_file] [ignore_patterns_file]
+python dir_scanner.py . ./data/this.json ./ignore.json
 ```
 
-### single_file_concat.py
-Combines all scanned files into one text file with START/END markers for each file.
-```bash
-python single_file_concat.py <json_file> [output_file]
+[GIF 1: Self-Scanning Process]
+*The GIF will show:
+1. Running the command above
+2. The resulting this.json being created in the data directory
+3. Quick peek at the JSON showing the structure:*
+```json
+{
+    ".": {
+        "dirs": ["data", "docs"],
+        "files": [
+            ".gitignore",
+            "claude_concat.py",
+            "dir_scanner.py",
+            "ignore.json",
+            "readme.md",
+            "single_file_concat.py"
+        ]
+    },
+    ...
+}
 ```
 
-### claude_concat.py
-Creates a Claude-friendly version of your files by flattening them into a single directory with path information preserved in filenames.
-```bash
-python claude_concat.py <json_file> <output_directory>
-```
-
-## Ignore Patterns
-Create a JSON file to specify what to ignore:
+Note how we're using `ignore.json` to skip unnecessary files:
 ```json
 {
     "files": [],
-    "folders": ["__pycache__"],
+    "folders": ["__pycache__", ".git"],
     "extensions": [".pyc"]
 }
 ```
 
-## Quick Start
-1. Scan your directory:
+### 2. Preparing for Claude
+
+Now let's convert our scanned structure into Claude-friendly format:
+
 ```bash
-python dir_scanner.py ./my_project ./data/output.json ./ignore.json
+python claude_concat.py ./data/this.json ./data/claude_ready/
 ```
 
-2. Prepare for Claude:
-```bash
-python claude_concat.py ./data/output.json ./data/claude_ready/
+[GIF 2: Creating Claude-Ready Files]
+*The GIF will show:
+1. Running the command above
+2. The claude_ready directory being created
+3. The resulting files with transformed names:*
+```
+claude_ready/
+  ├─ .gitignore
+  ├─ claude_concat.py
+  ├─ dir_scanner.py
+  ├─ ignore.json
+  ├─ readme.md
+  ├─ single_file_concat.py
+  ├─ data@.gitignore
+  ├─ docs@readme.md
 ```
 
-3. Drag all files from `claude_ready/` into Claude Projects.
+### 3. Uploading to Claude
 
-## Documentation
+[GIF 3: Claude Projects Upload]
+*The GIF will show:
+1. Opening Claude Projects
+2. Dragging all files from claude_ready/
+3. Claude acknowledging receipt of the files, showing them in the sidebar*
 
-- [Introduction and Motivation](docs/index.md) - Learn about why this toolkit exists and how it works
-- More documentation coming soon
+Now you can ask Claude about any aspect of the toolkit's codebase! Try questions like:
+- "How does dir_scanner.py handle ignore patterns?"
+- "What's the relationship between the three main Python scripts?"
+- "Can you suggest improvements to the error handling?"
 
-**Note**: The `data/` directory is git-ignored. This is the recommended place to store your JSON files and processed outputs.
+### Alternative: Single File Output
+
+If you prefer having everything in one file:
+
+```bash
+python single_file_concat.py ./data/this.json ./data/combined.txt
+```
+
+[GIF 4: Creating Combined Output]
+*The GIF will show:
+1. Running the command above
+2. The resulting combined.txt with START/END markers:*
+```
+--- dir_scanner.py START ---
+import os
+import sys
+import json
+...
+--- dir_scanner.py END ---
+
+--- claude_concat.py START ---
+...
+```
+
+## How It Works
+
+1. `dir_scanner.py`: Maps your project structure
+   - Scans directories recursively
+   - Follows ignore patterns (like `.gitignore`)
+   - Creates a JSON representation
+
+2. `claude_concat.py`: Prepares for Claude Projects
+   - Flattens directory structure
+   - Preserves path info in filenames
+   - Creates upload-ready files
+
+3. `single_file_concat.py`: (Alternative approach)
+   - Combines all files into one
+   - Adds clear START/END markers
+   - Preserves original paths
+
+## Best Practices
+
+- Always use an `ignore.json` file:
+  ```json
+  {
+      "files": [],
+      "folders": ["__pycache__", ".git"],
+      "extensions": [".pyc"]
+  }
+  ```
+- Keep processed files in `data/` (it's gitignored)
+- Review files before upload to protect sensitive data
+- For large projects, upload in logical segments
