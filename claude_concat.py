@@ -73,7 +73,22 @@ def main():
     json_file_path = sys.argv[1]
     output_dir = sys.argv[2]
 
-    # Ensure output directory exists
+    # Confirm output directory with user
+    if os.path.exists(output_dir):
+        confirm = input(f"Output directory '{output_dir}' already exists. Delete and continue? (y/N): ")
+        if confirm.lower() != 'y':
+            print("Operation cancelled.")
+            sys.exit(0)
+        
+        # Remove existing output directory
+        try:
+            import shutil
+            shutil.rmtree(output_dir)
+        except Exception as e:
+            print(f"Error removing directory {output_dir}: {e}")
+            sys.exit(1)
+
+    # Create fresh output directory
     os.makedirs(output_dir, exist_ok=True)
 
     with open(json_file_path, 'r') as json_file:
