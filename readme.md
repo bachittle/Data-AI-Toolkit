@@ -14,27 +14,7 @@ First, let's scan the toolkit's directory structure:
 python dir_scanner.py . ./data/this.json ./ignore.json
 ```
 
-[GIF 1: Self-Scanning Process]
-*The GIF will show:
-1. Running the command above
-2. The resulting this.json being created in the data directory
-3. Quick peek at the JSON showing the structure:*
-```json
-{
-    ".": {
-        "dirs": ["data", "docs"],
-        "files": [
-            ".gitignore",
-            "claude_concat.py",
-            "dir_scanner.py",
-            "ignore.json",
-            "readme.md",
-            "single_file_concat.py"
-        ]
-    },
-    ...
-}
-```
+![data-ai-toolkit-1](https://github.com/user-attachments/assets/0b6a02d4-80af-4263-ae6c-9203e49599b1)
 
 Note how we're using `ignore.json` to skip unnecessary files:
 ```json
@@ -53,30 +33,11 @@ Now let's convert our scanned structure into Claude-friendly format:
 python claude_concat.py ./data/this.json ./data/claude_ready/
 ```
 
-[GIF 2: Creating Claude-Ready Files]
-*The GIF will show:
-1. Running the command above
-2. The claude_ready directory being created
-3. The resulting files with transformed names:*
-```
-claude_ready/
-  ├─ .gitignore
-  ├─ claude_concat.py
-  ├─ dir_scanner.py
-  ├─ ignore.json
-  ├─ readme.md
-  ├─ single_file_concat.py
-  ├─ data@.gitignore
-  ├─ docs@readme.md
-```
+![data-ai-toolkit-2](https://github.com/user-attachments/assets/e8b1aba0-5fd4-4e4a-8a75-3fd7765583df)
 
 ### 3. Uploading to Claude
 
-[GIF 3: Claude Projects Upload]
-*The GIF will show:
-1. Opening Claude Projects
-2. Dragging all files from claude_ready/
-3. Claude acknowledging receipt of the files, showing them in the sidebar*
+![data-ai-toolkit-3](https://github.com/user-attachments/assets/f18b589d-cce2-49a7-9c0e-799b131c9c17)
 
 Now you can ask Claude about any aspect of the toolkit's codebase! Try questions like:
 - "How does dir_scanner.py handle ignore patterns?"
@@ -91,21 +52,8 @@ If you prefer having everything in one file:
 python single_file_concat.py ./data/this.json ./data/combined.txt
 ```
 
-[GIF 4: Creating Combined Output]
-*The GIF will show:
-1. Running the command above
-2. The resulting combined.txt with START/END markers:*
-```
---- dir_scanner.py START ---
-import os
-import sys
-import json
-...
---- dir_scanner.py END ---
+![data-ai-toolkit-4](https://github.com/user-attachments/assets/b66b42a0-c56b-49d7-bd44-f4519d8af06c)
 
---- claude_concat.py START ---
-...
-```
 
 ## How It Works
 
