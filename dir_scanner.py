@@ -16,6 +16,8 @@ def should_ignore(name, ignore_patterns):
         return True
     if name in ignore_patterns["folders"]:
         return True
+    if ignore_patterns.get("ignore_hidden", False) and name.startswith('.'):
+        return True
     return False
 
 def create_directory_lookup_table(directory, ignore_patterns=DEFAULT_IGNORE):
@@ -24,8 +26,8 @@ def create_directory_lookup_table(directory, ignore_patterns=DEFAULT_IGNORE):
         print(f"Processing directory: {root}")
 
         # Filter out hidden files/folders and ignored patterns
-        dirs[:] = [d for d in dirs if not d.startswith('.') and not should_ignore(d, ignore_patterns)]
-        files = [f for f in files if not f.startswith('.') and not should_ignore(f, ignore_patterns)]
+        dirs[:] = [d for d in dirs if not should_ignore(d, ignore_patterns)]
+        files = [f for f in files if not should_ignore(f, ignore_patterns)]
         
         directory_dict[root] = {'dirs': dirs, 'files': files}
     return directory_dict

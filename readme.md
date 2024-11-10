@@ -2,6 +2,8 @@
 
 A collection of Python scripts designed to help prepare and organize files for AI interactions. Makes it easy to share multiple files and directory structures with AI systems like Claude.
 
+For detailed information about the motivation and design behind this toolkit, see [docs/index.md](docs/index.md).
+
 ## Scripts
 
 ### dir_scanner.py
@@ -17,7 +19,7 @@ python single_file_concat.py <json_file> [output_file]
 ```
 
 ### claude_concat.py
-Flattens files into a single directory, using @ symbols in filenames to preserve path info.
+Creates a Claude-friendly version of your files by flattening them into a single directory with path information preserved in filenames.
 ```bash
 python claude_concat.py <json_file> <output_directory>
 ```
@@ -32,12 +34,22 @@ Create a JSON file to specify what to ignore:
 }
 ```
 
-## Basic Usage
-1. Scan your directory to create a JSON file mapping its structure:
-  - Scan everything: `python dir_scanner.py ./my_project ./data/output.json`
-  - Scan and ignore what is in ignore file: `python dir_scanner.py ./my_project ./data/output.json ./ignore.json`
-2. Then either:
-  - Combine into one file: `python single_file_concat.py ./data/output.json ./data/combined.txt`
-  - Or prepare for Claude: `python claude_concat.py ./data/output.json ./data/prepared_files/`
+## Quick Start
+1. Scan your directory:
+```bash
+python dir_scanner.py ./my_project ./data/output.json ./ignore.json
+```
 
-**Note**: The `data/` directory is git-ignored. This is the recommended place to store your JSON files and output.
+2. Prepare for Claude:
+```bash
+python claude_concat.py ./data/output.json ./data/claude_ready/
+```
+
+3. Drag all files from `claude_ready/` into Claude Projects.
+
+## Documentation
+
+- [Introduction and Motivation](docs/index.md) - Learn about why this toolkit exists and how it works
+- More documentation coming soon
+
+**Note**: The `data/` directory is git-ignored. This is the recommended place to store your JSON files and processed outputs.
