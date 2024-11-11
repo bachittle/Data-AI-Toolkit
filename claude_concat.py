@@ -43,11 +43,7 @@ def concat_dir_data(dir_data, output_dir):
     created_files = []
     visual_files = []
     
-    # Create visual subdirectory
-    visual_dir = os.path.join(output_dir, "visual")
-    os.makedirs(visual_dir, exist_ok=True)
-    
-    # Get the parent directory (first key in the JSON)
+    visual_dir = None
     parent_dir = next(iter(dir_data.keys()))
     
     for base_dir, content in dir_data.items():
@@ -56,8 +52,11 @@ def concat_dir_data(dir_data, output_dir):
             relative_path = os.path.relpath(full_path, parent_dir)
             transformed_name = transform_path(parent_dir, relative_path)
             
-            # Determine output path based on file type
             if is_visual_file(transformed_name):
+                if visual_dir is None:
+                    # Create visual subdirectory only when the first visual file is encountered
+                    visual_dir = os.path.join(output_dir, "visual")
+                    os.makedirs(visual_dir, exist_ok=True)
                 output_path = os.path.join(visual_dir, transformed_name)
                 visual_files.append(transformed_name)
             else:
@@ -117,9 +116,10 @@ def main():
         for f in created_files:
             print(f"- {f}")
             
-        print("\nVisual files (in 'visual' subdirectory):")
-        for f in visual_files:
-            print(f"- {f}")
+        if visual_files:
+            print("\nVisual files (in 'visual' subdirectory):")
+            for f in visual_files:
+                print(f"- {f}")
 
 if __name__ == "__main__":
     main()
