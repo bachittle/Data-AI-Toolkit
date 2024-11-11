@@ -1,5 +1,5 @@
 {
     "files": [],
-    "folders": ["__pycache__", "personal", "this", ".git"],
+    "folders": ["__pycache__", "personal", "claude-ready", ".git"],
     "extensions": [".pyc"]
 }
