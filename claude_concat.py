@@ -35,8 +35,17 @@ def validate_json(dir_data):
     
     return True
 
+def is_visual_file(filepath):
+    visual_extensions = ('.png', '.jpg', '.jpeg', '.pdf')
+    return filepath.lower().endswith(visual_extensions)
+
 def concat_dir_data(dir_data, output_dir):
     created_files = []
+    visual_files = []
+    
+    # Create visual subdirectory
+    visual_dir = os.path.join(output_dir, "visual")
+    os.makedirs(visual_dir, exist_ok=True)
     
     # Get the parent directory (first key in the JSON)
     parent_dir = next(iter(dir_data.keys()))
@@ -44,26 +53,31 @@ def concat_dir_data(dir_data, output_dir):
     for base_dir, content in dir_data.items():
         for filepath in content["files"]:
             full_path = os.path.join(base_dir, filepath)
-            # Get path relative to parent directory and transform
             relative_path = os.path.relpath(full_path, parent_dir)
             transformed_name = transform_path(parent_dir, relative_path)
-            output_path = os.path.join(output_dir, transformed_name)
+            
+            # Determine output path based on file type
+            if is_visual_file(transformed_name):
+                output_path = os.path.join(visual_dir, transformed_name)
+                visual_files.append(transformed_name)
+            else:
+                output_path = os.path.join(output_dir, transformed_name)
+                created_files.append(transformed_name)
             
             print(f"Processing: {full_path} -> {transformed_name}")
             
             try:
-                with open(full_path, "r") as f:
+                with open(full_path, "rb") as f:
                     file_content = f.read()
                     
-                with open(output_path, "w") as out_f:
+                with open(output_path, "wb") as out_f:
                     out_f.write(file_content)
-                    created_files.append(transformed_name)
                     
             except Exception as e:
                 print(f"Error processing {full_path}: {e}")
                 continue
     
-    return created_files
+    return created_files, visual_files
 
 def main():
     if len(sys.argv) < 3:
@@ -97,10 +111,14 @@ def main():
             sys.exit(1)
         
         print("JSON is valid. Processing files...")
-        created_files = concat_dir_data(dir_data, output_dir)
+        created_files, visual_files = concat_dir_data(dir_data, output_dir)
         
         print("\nCreated files:")
         for f in created_files:
+            print(f"- {f}")
+            
+        print("\nVisual files (in 'visual' subdirectory):")
+        for f in visual_files:
             print(f"- {f}")
 
 if __name__ == "__main__":
