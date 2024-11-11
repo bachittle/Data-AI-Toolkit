@@ -6,9 +6,7 @@ A collection of tools to seamlessly share your codebase with Claude and other AI
 
 When working with AI assistants like Claude, direct folder uploads aren't supported. Trying to maintain project structure through manual uploads quickly becomes messy and error-prone.
 
-[GIF: Claude Folder Limitations]
-*This GIF will demonstrate how Claude struggles with direct folder uploads, showing error messages and confused responses when trying to reference files in subdirectories. This limitation is why we need a more structured approach.*
-
+![data-ai-toolkit-5](https://github.com/user-attachments/assets/7d51fece-3c49-42fc-a2a5-c61f0188bd8f)
 
 ## Directory Structure Analysis
 
@@ -53,12 +51,7 @@ Once processed, the files can be dragged directly into Claude while maintaining 
 
 While the Claude Projects approach works well in Claude, other AI platforms like Google AI Studio handle multiple files differently. 
 
-[GIF: Google AI Studio File Handling]
-*This GIF will demonstrate:
-1. Attempting to use the Claude-style @ files in Google AI Studio
-2. Showing how this approach doesn't work well
-3. Switching to the single file format
-4. Successfully analyzing the codebase with proper context*
+![data-ai-toolkit-6](https://github.com/user-attachments/assets/d2c0715d-4937-4a56-af03-dab58aaed82c)
 
 Using `single_file_concat.py`, combine all files into a single document with clear START/END markers:
 
@@ -67,6 +60,10 @@ python single_file_concat.py ./data/this.json ./data/combined.txt
 ```
 
 ![data-ai-toolkit-4](https://github.com/user-attachments/assets/b66b42a0-c56b-49d7-bd44-f4519d8af06c)
+
+We can now upload this file as context to any LLM.
+
+![data-ai-toolkit-7](https://github.com/user-attachments/assets/0c634f15-40dc-48e6-b8e2-5631e6348c43)
 
 ### Key Benefits
 - Works consistently across different AI platforms
