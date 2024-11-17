@@ -32,8 +32,40 @@ We use `ignore.json` to skip unnecessary files:
 Using `claude_concat.py`, transform your project into a Claude-friendly format where all files are flattened with path information encoded in the filenames:
 
 ```bash
+# Basic usage
 python claude_concat.py ./data/this.json ./data/claude_ready/
+
+# With token counting enabled
+python claude_concat.py ./data/this.json ./data/claude_ready/ --count-tokens
+
+# With specific model for token counting
+python claude_concat.py ./data/this.json ./data/claude_ready/ --count-tokens --model claude-3-opus-20240229
 ```
+
+### Token Counting Feature
+The tool now includes an optional token counting feature that helps you understand the token usage of your files:
+
+```bash
+$ python claude_concat.py ./data/this.json ./data/claude_ready/ --count-tokens
+
+Processing: src/main.py -> main.py
+Tokens: 1,234
+
+Processing: tests/test_main.py -> tests@test_main.py
+Tokens: 567
+
+Total tokens processed: 1,801
+```
+
+Requirements for token counting:
+- Anthropic API key set as environment variable (ANTHROPIC_API_KEY)
+- Anthropic Python package installed: `pip install anthropic`
+
+Token counting options:
+- `--count-tokens`: Enable token counting
+- `--model`: Specify Claude model for counting (default: claude-3-sonnet-20240229)
+
+Note: The tool works normally without token counting if these requirements aren't met.
 
 ![data-ai-toolkit-2](https://github.com/user-attachments/assets/e8b1aba0-5fd4-4e4a-8a75-3fd7765583df)
 
@@ -46,6 +78,7 @@ Once processed, the files can be dragged directly into Claude while maintaining 
 - Files remain individually addressable
 - Path information preserved in filenames
 - Great for exploratory code analysis
+- Optional token usage tracking
 
 ## Single File Approach
 
@@ -83,6 +116,7 @@ We can now upload this file as context to any LLM.
 - Preserves path info in filenames
 - Creates individual upload-ready files
 - Optimized for Claude Projects
+- Optional token counting with `--count-tokens`
 
 **single_file_concat.py**
 - Combines all files into one document
@@ -107,3 +141,11 @@ We can now upload this file as context to any LLM.
   - Use claude_concat.py for interactive file exploration
   - Use single_file_concat.py for cross-platform compatibility
 - Test with a small subset of files first
+- Use token counting to stay within model context limits
+
+## Token Counting Tips
+- Enable token counting when preparing large codebases
+- Use results to split files into appropriate batches
+- Monitor token usage across different file types
+- Consider model selection based on project size
+- Remember token counting is optional - tool works without it

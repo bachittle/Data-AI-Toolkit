@@ -6,8 +6,10 @@
 import sys
 import json
 import os
+import argparse
+from typing import Tuple, List, Optional
 
-def transform_path(parent_dir, filepath):
+def transform_path(parent_dir: str, filepath: str) -> str:
     # If it's the root directory file, just return the filename
     if '/' not in filepath and '\\' not in filepath:
         return filepath
@@ -19,7 +21,7 @@ def transform_path(parent_dir, filepath):
     # Otherwise, replace slashes with @ but skip the parent dir
     return filepath.replace('/', '@')
 
-def validate_json(dir_data):
+def validate_json(dir_data: dict) -> bool:
     if not isinstance(dir_data, dict):
         print("Error: Invalid JSON format. Expected a dictionary.")
         return False
@@ -35,13 +37,58 @@ def validate_json(dir_data):
     
     return True
 
-def is_visual_file(filepath):
+def is_visual_file(filepath: str) -> bool:
     visual_extensions = ('.png', '.jpg', '.jpeg', '.pdf')
     return filepath.lower().endswith(visual_extensions)
 
-def concat_dir_data(dir_data, output_dir):
+def setup_token_counter(count_tokens: bool, model_name: str) -> Tuple[bool, Optional[object]]:
+    """Initialize token counting if enabled."""
+    if not count_tokens:
+        return False, None
+    
+    try:
+        from anthropic import Anthropic
+    except ImportError:
+        print("Warning: Token counting requested but anthropic package not installed.")
+        print("Install with: pip install anthropic")
+        return False, None
+    
+    try:
+        client = Anthropic()
+        # Test the client with a simple count
+        client.beta.messages.count_tokens(
+            model=model_name,
+            messages=[{"role": "user", "content": "test"}]
+        )
+        return True, client
+    except Exception as e:
+        print(f"Warning: Token counting initialization failed: {e}")
+        print("Token counting will be disabled.")
+        return False, None
+
+def count_file_tokens(client: Optional[object], model_name: str, content: str) -> Optional[int]:
+    """Count tokens in file content if token counting is enabled."""
+    if not client:
+        return None
+    
+    try:
+        count = client.beta.messages.count_tokens(
+            model=model_name,
+            messages=[{"role": "user", "content": content}]
+        )
+        return count.input_tokens
+    except Exception as e:
+        print(f"Warning: Token counting failed: {e}")
+        return None
+
+def concat_dir_data(dir_data: dict, output_dir: str, count_tokens: bool = False, 
+                   model_name: str = "claude-3-5-sonnet-latest") -> Tuple[List[str], List[str]]:
     created_files = []
     visual_files = []
+    total_tokens = 0
+    
+    # Initialize token counting if enabled
+    token_counting_enabled, client = setup_token_counter(count_tokens, model_name)
     
     visual_dir = None
     parent_dir = next(iter(dir_data.keys()))
@@ -54,7 +101,6 @@ def concat_dir_data(dir_data, output_dir):
             
             if is_visual_file(transformed_name):
                 if visual_dir is None:
-                    # Create visual subdirectory only when the first visual file is encountered
                     visual_dir = os.path.join(output_dir, "visual")
                     os.makedirs(visual_dir, exist_ok=True)
                 output_path = os.path.join(visual_dir, transformed_name)
@@ -63,12 +109,26 @@ def concat_dir_data(dir_data, output_dir):
                 output_path = os.path.join(output_dir, transformed_name)
                 created_files.append(transformed_name)
             
-            print(f"Processing: {full_path} -> {transformed_name}")
+            print(f"\nProcessing: {full_path} -> {transformed_name}")
             
             try:
+                # Read file content
                 with open(full_path, "rb") as f:
                     file_content = f.read()
-                    
+                
+                # Count tokens if enabled and not a visual file
+                if token_counting_enabled and not is_visual_file(transformed_name):
+                    try:
+                        # Decode content for token counting
+                        decoded_content = file_content.decode('utf-8')
+                        token_count = count_file_tokens(client, model_name, decoded_content)
+                        if token_count is not None:
+                            total_tokens += token_count
+                            print(f"Tokens: {token_count:,}")
+                    except UnicodeDecodeError:
+                        print("Warning: File appears to be binary. Skipping token count.")
+                
+                # Write the file
                 with open(output_path, "wb") as out_f:
                     out_f.write(file_content)
                     
@@ -76,19 +136,24 @@ def concat_dir_data(dir_data, output_dir):
                 print(f"Error processing {full_path}: {e}")
                 continue
     
+    if token_counting_enabled and total_tokens > 0:
+        print(f"\nTotal tokens processed: {total_tokens:,}")
+    
     return created_files, visual_files
 
 def main():
-    if len(sys.argv) < 3:
-        print("Usage: python claude_concat.py <json_file> <output_directory>")
-        sys.exit(1)
-
-    json_file_path = sys.argv[1]
-    output_dir = sys.argv[2]
+    parser = argparse.ArgumentParser(description='Process directory structure into Claude-friendly format.')
+    parser.add_argument('json_file', help='Input JSON file containing directory structure')
+    parser.add_argument('output_dir', help='Output directory for processed files')
+    parser.add_argument('--count-tokens', action='store_true', help='Enable token counting')
+    parser.add_argument('--model', default="claude-3-sonnet-20240229", 
+                      help='Model name for token counting (default: claude-3-sonnet-20240229)')
+    
+    args = parser.parse_args()
 
     # Confirm output directory with user
-    if os.path.exists(output_dir):
-        confirm = input(f"Output directory '{output_dir}' already exists. Delete and continue? (y/N): ")
+    if os.path.exists(args.output_dir):
+        confirm = input(f"Output directory '{args.output_dir}' already exists. Delete and continue? (y/N): ")
         if confirm.lower() != 'y':
             print("Operation cancelled.")
             sys.exit(0)
@@ -96,21 +161,26 @@ def main():
         # Remove existing output directory
         try:
             import shutil
-            shutil.rmtree(output_dir)
+            shutil.rmtree(args.output_dir)
         except Exception as e:
-            print(f"Error removing directory {output_dir}: {e}")
+            print(f"Error removing directory {args.output_dir}: {e}")
             sys.exit(1)
 
     # Create fresh output directory
-    os.makedirs(output_dir, exist_ok=True)
+    os.makedirs(args.output_dir, exist_ok=True)
 
-    with open(json_file_path, 'r') as json_file:
+    with open(args.json_file, 'r') as json_file:
         dir_data = json.load(json_file)
         if not validate_json(dir_data):
             sys.exit(1)
         
         print("JSON is valid. Processing files...")
-        created_files, visual_files = concat_dir_data(dir_data, output_dir)
+        created_files, visual_files = concat_dir_data(
+            dir_data, 
+            args.output_dir,
+            count_tokens=args.count_tokens,
+            model_name=args.model
+        )
         
         print("\nCreated files:")
         for f in created_files:
