@@ -7,7 +7,7 @@ import sys
 import json
 import os
 import argparse
-from typing import Tuple, List, Optional
+from typing import Tuple, List, Optional, Any
 
 def transform_path(parent_dir: str, filepath: str) -> str:
     # If it's the root directory file, just return the filename
@@ -41,15 +41,15 @@ def is_visual_file(filepath: str) -> bool:
     visual_extensions = ('.png', '.jpg', '.jpeg', '.pdf')
     return filepath.lower().endswith(visual_extensions)
 
-def setup_token_counter(count_tokens: bool, model_name: str) -> Tuple[bool, Optional[object]]:
-    """Initialize token counting if enabled."""
+def setup_anthropic_counter(count_tokens: bool, model_name: str) -> Tuple[bool, Optional[Any]]:
+    """Initialize Anthropic token counting if enabled."""
     if not count_tokens:
         return False, None
     
     try:
         from anthropic import Anthropic
     except ImportError:
-        print("Warning: Token counting requested but anthropic package not installed.")
+        print("Warning: Anthropic token counting requested but anthropic package not installed.")
         print("Install with: pip install anthropic")
         return False, None
     
@@ -60,14 +60,35 @@ def setup_token_counter(count_tokens: bool, model_name: str) -> Tuple[bool, Opti
             model=model_name,
             messages=[{"role": "user", "content": "test"}]
         )
+        print(f"Using Anthropic API tokenizer with {model_name}")
         return True, client
+    except Exception as e:
+        print(f"Warning: Anthropic token counting initialization failed: {e}")
+        print("Token counting will be disabled.")
+        return False, None
+
+def setup_tiktoken_counter(count_tokens: bool) -> Tuple[bool, Optional[Any]]:
+    """Initialize tiktoken counter if enabled."""
+    if not count_tokens:
+        return False, None
+    
+    try:
+        import tiktoken
+        model_name = "gpt-4o"
+        encoder = tiktoken.encoding_for_model(model_name)
+        print(f"Using tiktoken tokenizer with {model_name} encoder")
+        return True, encoder
+    except ImportError:
+        print("Warning: Token counting requested but tiktoken package not installed.")
+        print("Install with: pip install tiktoken")
+        return False, None
     except Exception as e:
         print(f"Warning: Token counting initialization failed: {e}")
         print("Token counting will be disabled.")
         return False, None
 
-def count_file_tokens(client: Optional[object], model_name: str, content: str) -> Optional[int]:
-    """Count tokens in file content if token counting is enabled."""
+def count_anthropic_tokens(client: Optional[Any], model_name: str, content: str) -> Optional[int]:
+    """Count tokens using Anthropic API if enabled."""
     if not client:
         return None
     
@@ -81,14 +102,53 @@ def count_file_tokens(client: Optional[object], model_name: str, content: str) -
         print(f"Warning: Token counting failed: {e}")
         return None
 
+def count_tiktoken_tokens(encoder: Optional[Any], content: str) -> Optional[int]:
+    """Count tokens using tiktoken if enabled."""
+    if not encoder:
+        return None
+    
+    try:
+        num_tokens = len(encoder.encode(content))
+        return num_tokens
+    except Exception as e:
+        print(f"Warning: Token counting failed: {e}")
+        return None
+
+def setup_token_counter(count_tokens: bool, tokenizer: str, model_name: str = None) -> Tuple[bool, Optional[Any], str]:
+    """Setup the appropriate token counter based on tokenizer choice."""
+    if not count_tokens:
+        return False, None, tokenizer
+    
+    if tokenizer == 'anthropic':
+        is_enabled, counter = setup_anthropic_counter(count_tokens, model_name)
+        if not is_enabled and count_tokens:
+            print("Falling back to tiktoken...")
+            is_enabled, counter = setup_tiktoken_counter(count_tokens)
+            if is_enabled:
+                tokenizer = 'tiktoken'
+    else:  # tiktoken
+        is_enabled, counter = setup_tiktoken_counter(count_tokens)
+        
+    return is_enabled, counter, tokenizer
+
+def count_file_tokens(tokenizer: str, counter: Any, model_name: str, content: str) -> Optional[int]:
+    """Count tokens using the selected tokenizer."""
+    if tokenizer == 'anthropic':
+        return count_anthropic_tokens(counter, model_name, content)
+    else:  # tiktoken
+        return count_tiktoken_tokens(counter, content)
+
 def concat_dir_data(dir_data: dict, output_dir: str, count_tokens: bool = False, 
+                   tokenizer: str = 'anthropic',
                    model_name: str = "claude-3-5-sonnet-latest") -> Tuple[List[str], List[str]]:
     created_files = []
     visual_files = []
     total_tokens = 0
     
-    # Initialize token counting if enabled
-    token_counting_enabled, client = setup_token_counter(count_tokens, model_name)
+    # Initialize token counting
+    token_counting_enabled, counter, active_tokenizer = setup_token_counter(
+        count_tokens, tokenizer, model_name
+    )
     
     visual_dir = None
     parent_dir = next(iter(dir_data.keys()))
@@ -121,7 +181,7 @@ def concat_dir_data(dir_data: dict, output_dir: str, count_tokens: bool = False,
                     try:
                         # Decode content for token counting
                         decoded_content = file_content.decode('utf-8')
-                        token_count = count_file_tokens(client, model_name, decoded_content)
+                        token_count = count_file_tokens(active_tokenizer, counter, model_name, decoded_content)
                         if token_count is not None:
                             total_tokens += token_count
                             print(f"Tokens: {token_count:,}")
@@ -137,7 +197,11 @@ def concat_dir_data(dir_data: dict, output_dir: str, count_tokens: bool = False,
                 continue
     
     if token_counting_enabled and total_tokens > 0:
-        print(f"\nTotal tokens processed: {total_tokens:,}")
+        tokenizer_name = "Anthropic API" if active_tokenizer == 'anthropic' else "tiktoken"
+        print(f"\nTotal tokens processed ({tokenizer_name}): {total_tokens:,}")
+        
+        if total_tokens > 80000:
+            print("\nWARNING: Total tokens exceed 80,000. This may be too large for some models.")
     
     return created_files, visual_files
 
@@ -146,8 +210,10 @@ def main():
     parser.add_argument('json_file', help='Input JSON file containing directory structure')
     parser.add_argument('output_dir', help='Output directory for processed files')
     parser.add_argument('--count-tokens', action='store_true', help='Enable token counting')
-    parser.add_argument('--model', default="claude-3-sonnet-20240229", 
-                      help='Model name for token counting (default: claude-3-sonnet-20240229)')
+    parser.add_argument('--model', default="claude-3-5-sonnet-latest", 
+                      help='Model name for token counting (default: claude-3-5-sonnet-latest)')
+    parser.add_argument('--tokenizer', choices=['anthropic', 'tiktoken'], default='anthropic',
+                      help='Choose tokenizer for counting (default: anthropic)')
     
     args = parser.parse_args()
 
@@ -179,17 +245,19 @@ def main():
             dir_data, 
             args.output_dir,
             count_tokens=args.count_tokens,
+            tokenizer=args.tokenizer,
             model_name=args.model
         )
         
-        print("\nCreated files:")
-        for f in created_files:
-            print(f"- {f}")
+        # don't print these for now, just look in the folder to see what was made
+        # print("\nCreated files:")
+        # for f in created_files:
+        #     print(f"- {f}")
             
-        if visual_files:
-            print("\nVisual files (in 'visual' subdirectory):")
-            for f in visual_files:
-                print(f"- {f}")
+        # if visual_files:
+        #     print("\nVisual files (in 'visual' subdirectory):")
+        #     for f in visual_files:
+        #         print(f"- {f}")
 
 if __name__ == "__main__":
     main()
