@@ -59,10 +59,15 @@ python claude_concat.py ./data/project.json ./data/claude_ready/
 # 3. Drag all files from claude_ready/ into Claude Projects
 ```
 
-## Next Steps
+## Additional Resources
 
-Future documentation will cover:
-- Detailed usage guides
-- Real-world examples
-- Advanced features
-- Best practices
+For detailed guidance and real-world examples, check out:
+- [Workflows Guide](workflows.md) - Best practices for AI-assisted development
+- [Use Cases](use_cases.md) - Real-world examples and compatibility insights
+
+These guides cover:
+- Voice vs keyboard input strategies
+- PR-style development workflows
+- Token management approaches
+- Project compatibility considerations
+- Success stories and limitations

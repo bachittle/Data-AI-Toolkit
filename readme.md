@@ -178,3 +178,16 @@ We can now upload this file as context to any LLM.
 - Remember each tool handles token counting differently:
   - claude_concat.py: Counts individual file tokens
   - single_file_concat.py: Includes markers in count
+
+## Advanced Usage & Examples
+
+Looking to get the most out of Data AI Toolkit? Check out these additional guides:
+- [Workflows](docs/workflows.md) - Best practices for AI-assisted development, including:
+  - Voice input and keyboard workflows
+  - PR-style development approach
+  - GitHub integration patterns
+- [Use Cases](docs/use_cases.md) - Real-world examples and insights:
+  - Full-stack web applications (Flask/React)
+  - Python and C++ project considerations
+  - Token management strategies
+  - Self-improvement case study
