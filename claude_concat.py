@@ -209,20 +209,22 @@ def main():
     parser = argparse.ArgumentParser(description='Process directory structure into Claude-friendly format.')
     parser.add_argument('json_file', help='Input JSON file containing directory structure')
     parser.add_argument('output_dir', help='Output directory for processed files')
-    parser.add_argument('--count-tokens', action='store_true', help='Enable token counting')
-    parser.add_argument('--model', default="claude-3-5-sonnet-latest", 
+    parser.add_argument('-c', '--count-tokens', action='store_true', help='Enable token counting')
+    parser.add_argument('-m', '--model', default="claude-3-5-sonnet-latest", 
                       help='Model name for token counting (default: claude-3-5-sonnet-latest)')
-    parser.add_argument('--tokenizer', choices=['anthropic', 'tiktoken'], default='anthropic',
+    parser.add_argument('-t', '--tokenizer', choices=['anthropic', 'tiktoken'], default='anthropic',
                       help='Choose tokenizer for counting (default: anthropic)')
+    parser.add_argument('-y', '--yes', action='store_true', help='Skip confirmation prompts')
     
     args = parser.parse_args()
 
-    # Confirm output directory with user
+    # Confirm output directory with user and handle deletion
     if os.path.exists(args.output_dir):
-        confirm = input(f"Output directory '{args.output_dir}' already exists. Delete and continue? (y/N): ")
-        if confirm.lower() != 'y':
-            print("Operation cancelled.")
-            sys.exit(0)
+        if not args.yes:
+            confirm = input(f"Output directory '{args.output_dir}' already exists. Delete and continue? (y/N): ")
+            if confirm.lower() != 'y':
+                print("Operation cancelled.")
+                sys.exit(0)
         
         # Remove existing output directory
         try:

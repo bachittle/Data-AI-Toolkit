@@ -131,9 +131,18 @@ def main():
     parser = argparse.ArgumentParser(description='Concatenate directory files into a single file.')
     parser.add_argument('json_file', help='Input JSON file containing directory structure')
     parser.add_argument('output_file', nargs='?', help='Output file (optional)')
-    parser.add_argument('--count-tokens', action='store_true', help='Enable token counting using tiktoken')
+    parser.add_argument('-c', '--count-tokens', action='store_true', help='Enable token counting using tiktoken')
+    parser.add_argument('-y', '--yes', action='store_true', help='Skip confirmation prompts')
     
     args = parser.parse_args()
+
+    # Check if output file exists and handle confirmation
+    if args.output_file and os.path.exists(args.output_file):
+        if not args.yes:
+            confirm = input(f"Output file '{args.output_file}' already exists. Overwrite? (y/N): ")
+            if confirm.lower() != 'y':
+                print("Operation cancelled.")
+                sys.exit(0)
 
     with open(args.json_file, 'r') as json_file:
         dir_data = json.load(json_file)

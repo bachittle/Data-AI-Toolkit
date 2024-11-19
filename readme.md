@@ -14,17 +14,42 @@ First, scan your project structure to create a JSON representation:
 
 ```bash
 python dir_scanner.py . ./data/this.json ./ignore.json
+
+# Or use TOML for ignore patterns
+python dir_scanner.py . ./data/this.json ./ignore.toml
 ```
 
 ![data-ai-toolkit-1](https://github.com/user-attachments/assets/0b6a02d4-80af-4263-ae6c-9203e49599b1)
 
-We use `ignore.json` to skip unnecessary files:
+We support both JSON and TOML formats for ignore patterns:
+
+JSON format (`ignore.json`):
 ```json
 {
     "files": [],
     "folders": ["__pycache__", ".git"],
     "extensions": [".pyc"]
 }
+```
+
+TOML format (`ignore.toml`):
+```toml
+# Files to ignore
+files = []
+
+# Folders to skip during scanning
+folders = [
+    "__pycache__",
+    ".git"
+]
+
+# File extensions to ignore
+extensions = [
+    ".pyc"
+]
+
+# Optional: ignore hidden files
+ignore_hidden = false
 ```
 
 ## Claude Projects Approach
@@ -92,7 +117,7 @@ Once processed, the files can be dragged directly into Claude while maintaining 
 
 ## Single File Approach
 
-While the Claude Projects approach works well in Claude, other AI platforms like Google AI Studio handle multiple files differently. 
+While the Claude Projects approach works well in Claude, other AI platforms like Google AI Studio handle multiple files differently.
 
 ![data-ai-toolkit-6](https://github.com/user-attachments/assets/d2c0715d-4937-4a56-af03-dab58aaed82c)
 
@@ -129,7 +154,7 @@ We can now upload this file as context to any LLM.
 
 **dir_scanner.py**
 - Scans directories recursively
-- Follows ignore patterns
+- Follows ignore patterns (JSON or TOML)
 - Creates a JSON representation of your project
 
 **claude_concat.py**
@@ -150,14 +175,25 @@ We can now upload this file as context to any LLM.
 
 ## Best Practices
 
-- Always use an `ignore.json` file:
-  ```json
-  {
-      "files": [],
-      "folders": ["__pycache__", ".git"],
-      "extensions": [".pyc"]
-  }
-  ```
+- Use an ignore file to skip unnecessary content:
+  - TOML format (recommended):
+    ```toml
+    # Skip common non-essential files
+    files = []
+    folders = ["__pycache__", ".git"]
+    extensions = [".pyc"]
+
+    # Optional: ignore hidden files
+    ignore_hidden = false
+    ```
+  - JSON format (alternative):
+    ```json
+    {
+        "files": [],
+        "folders": ["__pycache__", ".git"],
+        "extensions": [".pyc"]
+    }
+    ```
 - Keep processed files in `data/` (it's gitignored)
 - Review files before upload to protect sensitive data
 - For large projects, upload in logical segments
